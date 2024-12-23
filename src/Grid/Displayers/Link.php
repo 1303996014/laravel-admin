@@ -4,7 +4,7 @@ namespace Encore\Admin\Grid\Displayers;
 
 class Link extends AbstractDisplayer
 {
-    public function display($callback = '', $target = '_blank')
+    public function display(\Closure|string $callback = '', $target = '_blank')
     {
         if ($callback instanceof \Closure) {
             $callback = $callback->bindTo($this->row);
