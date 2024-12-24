@@ -20,12 +20,21 @@ class LogOperation
     public function handle(Request $request, \Closure $next)
     {
         if ($this->shouldLogOperation($request)) {
+            $data = $request->input();
+            if (is_array($data)) { // 防止将密码记录到日志
+                if (isset($data['password'])) {
+                    $data['password'] = '****';
+                }
+                if (isset($data['password_confirmation'])) {
+                    $data['password_confirmation'] = '****';
+                }
+            }
             $log = [
                 'user_id' => Admin::user()->id,
                 'path'    => substr($request->path(), 0, 255),
                 'method'  => $request->method(),
                 'ip'      => $request->getClientIp(),
-                'input'   => json_encode($request->input()),
+                'input'   => json_encode($data),
             ];
 
             try {
