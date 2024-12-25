@@ -1,7 +1,7 @@
 <div>
     <span class="{{ $elementClass }}" data-inserted="0" data-key="{{ $key }}" data-name="{{ $name }}"
           data-toggle="collapse" data-target="#grid-collapse-{{ $name }}">
-        <a href="javascript:void(0)"><i class="fa fa-angle-double-down"></i>&nbsp;&nbsp;{{ $value }}</a>
+        <a href="javascript:void(0)"><i class="J_toggle_fa fa fa-angle-double-down"></i>&nbsp;&nbsp;{!! $value !!}</a>
     </span>
     <template class="grid-expand-{{ $name }}">
         <tr style='background-color: #ecf0f5;'>
@@ -47,7 +47,7 @@
             load('{{ $url }}'+'&key='+key, $('#grid-collapse-'+name));
         }
 
-        $("i", this).toggleClass("fa-angle-double-down fa-angle-double-up");
+        $("i.J_toggle_fa", this).toggleClass("fa-angle-double-down fa-angle-double-up");
     });
 
     $(document).on('pjax:click', '.collapse a.pjax, .collapse a.pjax', function (e) {
@@ -74,7 +74,7 @@
             $(this).data('inserted', 1);
         }
 
-        $("i", this).toggleClass("fa-angle-double-down fa-angle-double-up");
+        $("i.J_toggle_fa", this).toggleClass("fa-angle-double-down fa-angle-double-up");
     });
 
     @endif
