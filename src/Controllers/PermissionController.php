@@ -27,7 +27,10 @@ class PermissionController extends AdminController
         $permissionModel = config('admin.database.permissions_model');
 
         $grid = new Grid(new $permissionModel());
-
+        $grid->filter(function (\Encore\Admin\Grid\Filter $filter) {
+            $filter->like('http_path', trans('admin.route'));
+            $filter->like('slug', trans('admin.slug'));
+        });
         $grid->column('id', 'ID')->sortable();
         $grid->column('slug', trans('admin.slug'));
         $grid->column('name', trans('admin.name'));
@@ -100,7 +103,7 @@ class PermissionController extends AdminController
                 })->implode('&nbsp;');
 
                 if (!empty(config('admin.route.prefix'))) {
-                    $path = '/'.trim(config('admin.route.prefix'), '/').$path;
+                    $path = '/' . trim(config('admin.route.prefix'), '/') . $path;
                 }
 
                 return "<div style='margin-bottom: 5px;'>$method<code>$path</code></div>";
