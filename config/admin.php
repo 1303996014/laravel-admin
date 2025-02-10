@@ -223,7 +223,7 @@ return [
          * or specific method to path like: get:admin/auth/logs.
          */
         'except' => [
-            env('ADMIN_ROUTE_PREFIX', 'admin').'/auth/logs*',
+            env('ADMIN_ROUTE_PREFIX', 'admin') . '/auth/logs*',
         ],
     ],
 
@@ -241,6 +241,15 @@ return [
     */
     'check_menu_roles'       => true,
 
+    /**
+     * 只有超级管理员才能做的操作
+     */
+    'only_superadmin_can' => [
+        'enable' => false,
+        'routes' => ['*', '/*', '/*/', '/auth/roles', '/auth/permissions', '/auth/logs'], #添加编辑 "权限" 中被禁止的路由
+        'permissions' => ['*', 'auth.management'], #给角色或者用户 设置权限时 被禁止添加的 “权限”的slug
+        'roles' => ['administrator'], #敏感角色的slug 只有超级管理员才能给用户赋予
+    ],
     /*
     |--------------------------------------------------------------------------
     | User default avatar

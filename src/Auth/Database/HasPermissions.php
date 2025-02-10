@@ -64,6 +64,16 @@ trait HasPermissions
     }
 
     /**
+     * 检查是否是超级管理员
+     *
+     * @return boolean
+     */
+    public function isSuperAdministrator(): bool
+    {
+        return $this->id == 1 && $this->isAdministrator();
+    }
+
+    /**
      * Check if user is $role.
      *
      * @param string $role

@@ -2,10 +2,12 @@
 
 namespace Encore\Admin\Controllers;
 
+use Encore\Admin\Facades\Admin;
 use Encore\Admin\Form;
 use Encore\Admin\Grid;
 use Encore\Admin\Show;
 use Illuminate\Support\Str;
+use Illuminate\Support\MessageBag;
 
 class PermissionController extends AdminController
 {
@@ -139,7 +141,19 @@ class PermissionController extends AdminController
 
         $form->display('created_at', trans('admin.created_at'));
         $form->display('updated_at', trans('admin.updated_at'));
-
+        $form->saving(function (Form $form) {
+            $_routes = config('admin.only_superadmin_can.routes', []);
+            $http_path = trim($form->http_path);
+            if (Admin::user()->isSuperAdministrator()) {
+                //
+            } elseif (config('admin.only_superadmin_can.enable') && in_array($http_path, $_routes)) {
+                $error = new MessageBag([
+                    'title'   => '错误提示',
+                    'message' => '敏感路由，只有超级管理员才可添加',
+                ]);
+                return back()->with(compact('error'));
+            }
+        });
         return $form;
     }
 

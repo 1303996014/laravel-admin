@@ -5,6 +5,8 @@ namespace Encore\Admin\Controllers;
 use Encore\Admin\Form;
 use Encore\Admin\Grid;
 use Encore\Admin\Show;
+use Encore\Admin\Facades\Admin;
+use Illuminate\Support\MessageBag;
 
 class RoleController extends AdminController
 {
@@ -31,7 +33,7 @@ class RoleController extends AdminController
         $grid->column('slug', trans('admin.slug'));
         $grid->column('name', trans('admin.name'));
 
-        $grid->column('permissions', trans('admin.permission'))->pluck('name')->label();
+        $grid->column('permissions', trans('admin.permission'))->pluck('name')->label()->width(300);
 
         $grid->column('created_at', trans('admin.created_at'));
         $grid->column('updated_at', trans('admin.updated_at'));
@@ -86,17 +88,44 @@ class RoleController extends AdminController
         $permissionModel = config('admin.database.permissions_model');
         $roleModel = config('admin.database.roles_model');
 
+        /**@var \Illuminate\Support\Collection */
+        $allPermissions = $permissionModel::all();
+
         $form = new Form(new $roleModel());
 
         $form->display('id', 'ID');
 
         $form->text('slug', trans('admin.slug'))->rules('required');
         $form->text('name', trans('admin.name'))->rules('required');
-        $form->listbox('permissions', trans('admin.permissions'))->options($permissionModel::all()->pluck('name', 'id'));
+        $form->listbox('permissions', trans('admin.permissions'))->options($allPermissions->pluck('name', 'id'));
 
         $form->display('created_at', trans('admin.created_at'));
         $form->display('updated_at', trans('admin.updated_at'));
-
+        $form->saving(function (Form $form) use ($allPermissions) {
+            $_permission_slugs = config('admin.only_superadmin_can.permissions', []);
+            $permission_ids = $form->permissions;
+            $is_super = Admin::user()->isSuperAdministrator();
+            if ($is_super) {
+                //
+            } elseif (config('admin.only_superadmin_can.enable')) {
+                $_permissions = $allPermissions->whereIn('slug', $_permission_slugs)->pluck('slug', 'id')->toArray();
+                $_permission_tips = [];
+                foreach ($form->permissions as $_id) {
+                    if (isset($_permissions[intval($_id)])) {
+                        $pass = false;
+                        $_permission_tips[] = $_permissions[$_id];
+                    }
+                }
+                if ($_permission_tips) {
+                    $_permission_tips = implode(',', $_permission_tips);
+                    $error = new MessageBag([
+                        'title'   => '错误提示',
+                        'message' => "包含敏感权限[{$_permission_tips}]，只有超级管理员才可添加编辑",
+                    ]);
+                    return back()->with(compact('error'));
+                }
+            }
+        });
         return $form;
     }
 }
