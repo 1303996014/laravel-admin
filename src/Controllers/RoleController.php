@@ -110,10 +110,12 @@ class RoleController extends AdminController
             } elseif (config('admin.only_superadmin_can.enable')) {
                 $_permissions = $allPermissions->whereIn('slug', $_permission_slugs)->pluck('slug', 'id')->toArray();
                 $_permission_tips = [];
-                foreach ($form->permissions as $_id) {
-                    if (isset($_permissions[intval($_id)])) {
-                        $pass = false;
-                        $_permission_tips[] = $_permissions[$_id];
+                if ($form->permissions !== null) {
+                    foreach ($form->permissions as $_id) {
+                        if (isset($_permissions[intval($_id)])) {
+                            $pass = false;
+                            $_permission_tips[] = $_permissions[$_id];
+                        }
                     }
                 }
                 if ($_permission_tips) {

@@ -141,10 +141,12 @@ class UserController extends AdminController
                 $_roles = $allRoles->whereIn('slug', $_role_slugs)->pluck('slug', 'id')->toArray();
 
                 $_permission_tips = [];
-                foreach ($form->permissions as $_id) {
-                    if (isset($_permissions[intval($_id)])) {
-                        $pass = false;
-                        $_permission_tips[] = $_permissions[$_id];
+                if ($form->permissions != null) {
+                    foreach ($form->permissions as $_id) {
+                        if (isset($_permissions[intval($_id)])) {
+                            $pass = false;
+                            $_permission_tips[] = $_permissions[$_id];
+                        }
                     }
                 }
                 if ($_permission_tips) {
@@ -157,9 +159,11 @@ class UserController extends AdminController
                 }
 
                 $_role_tips = [];
-                foreach ($form->roles as $_id) {
-                    if (isset($_roles[intval($_id)])) {
-                        $_role_tips[] = $_roles[$_id];
+                if ($form->roles != null) {
+                    foreach ($form->roles as $_id) {
+                        if (isset($_roles[intval($_id)])) {
+                            $_role_tips[] = $_roles[$_id];
+                        }
                     }
                 }
                 if ($_role_tips) {
