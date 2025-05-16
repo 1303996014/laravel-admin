@@ -28,6 +28,9 @@ class LogOperation
                 if (isset($data['password_confirmation'])) {
                     $data['password_confirmation'] = '****';
                 }
+                if (isset($data['s'])) {
+                    unset($data['s']); //移除URL路径
+                }
             }
             $log = [
                 'user_id' => Admin::user()->id,
