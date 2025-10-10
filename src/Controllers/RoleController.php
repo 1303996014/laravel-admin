@@ -28,7 +28,19 @@ class RoleController extends AdminController
         $roleModel = config('admin.database.roles_model');
 
         $grid = new Grid(new $roleModel());
-
+        //自定义搜索
+        $grid->filter(function ($filter) {
+            $filter->disableIdFilter();
+            $filter->column(1 / 3, function ($filter) {
+                $filter->equal('id', 'ID');
+            });
+            $filter->column(1 / 3, function ($filter) {
+                $filter->like('slug', '标识');
+            });
+            $filter->column(1 / 3, function ($filter) {
+                $filter->like('name', '名称');
+            });
+        });
         $grid->column('id', 'ID')->sortable();
         $grid->column('slug', trans('admin.slug'));
         $grid->column('name', trans('admin.name'));
