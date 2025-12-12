@@ -43,7 +43,7 @@ class MenuController extends Controller
                     $form->text('uri', trans('admin.uri'));
                     $form->multipleSelect('roles', trans('admin.roles'))->options($roleModel::all()->pluck('name', 'id'));
                     if ((new $menuModel())->withPermission()) {
-                        $form->select('permission', trans('admin.permission'))->options($permissionModel::pluck('name', 'slug'));
+                        $form->multipleSelect('permission', trans('admin.permission'))->options($permissionModel::pluck('name', 'slug'));
                     }
                     $form->hidden('_token')->default(csrf_token());
 
@@ -131,12 +131,10 @@ class MenuController extends Controller
         $form->text('uri', trans('admin.uri'));
         $form->multipleSelect('roles', trans('admin.roles'))->options($roleModel::all()->pluck('name', 'id'));
         if ($form->model()->withPermission()) {
-            $form->select('permission', trans('admin.permission'))->options($permissionModel::pluck('name', 'slug'));
+            $form->multipleSelect('permission', trans('admin.permission'))->options($permissionModel::pluck('name', 'slug'));
         }
-
         $form->display('created_at', trans('admin.created_at'));
         $form->display('updated_at', trans('admin.updated_at'));
-
         return $form;
     }
 
