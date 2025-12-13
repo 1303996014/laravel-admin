@@ -458,6 +458,10 @@ class Admin
      */
     protected function passesRoleOrPermission(array $item, $user): bool
     {
+        //超级管理员不限制
+        if ($user && $user->id == 1) {
+            return true;
+        }
         //安全提取角色 ID（兼容 Eloquent 模型）
         $menuRoles = $item['roles'] ?? [];
         $menuRoleIds = collect($menuRoles)->pluck('id')->filter()->toArray();
@@ -509,6 +513,12 @@ class Admin
                 $branch[] = $menu;
             }
         }
+        //排序
+        usort($branch, function ($a, $b) {
+            $orderA = (int)($a['order'] ?? 0);
+            $orderB = (int)($b['order'] ?? 0);
+            return $orderA <=> $orderB;
+        });
         return $branch;
     }
 
@@ -548,7 +558,12 @@ class Admin
             }
             // 否则：父菜单不可访问 + 无子菜单 → 跳过（不会发生，因上面已处理 empty(children)）
         }
-
+        //排序
+        usort($result, function ($a, $b) {
+            $orderA = (int)($a['order'] ?? 0);
+            $orderB = (int)($b['order'] ?? 0);
+            return $orderA <=> $orderB;
+        });
         return $result;
     }
 }
