@@ -171,8 +171,31 @@ class Admin
 
         /** @var Menu $menuModel */
         $menuModel = new $menuClass();
+        //return $this->menu = $tree = $menuModel->toTree();
+        $menus = $menuModel->with('roles')->get();
+        $tree = $this->buildMenuTree($menus->toArray());
 
-        return $this->menu = $menuModel->toTree();
+        //重写验证逻辑===重点
+        // 同时支持角色 OR 权限（OR 逻辑）
+        $user = $this->user();
+        if (!$user) {
+            return $this->menu = [];
+        }
+
+        $tree = $this->menu = array_values(array_filter($tree, function ($item) use ($user) {
+            // 递归处理子菜单
+            if (!empty($item['children'])) {
+                $item['children'] = array_values(array_filter($item['children'], function ($child) use ($user) {
+                    return $this->passesRoleOrPermission($child, $user);
+                }));
+            }
+            return $this->passesRoleOrPermission($item, $user);
+        }));
+
+        // 使用深度递归过滤
+        $filteredTree = $this->filterMenuTree($tree, $user);
+
+        return $this->menu = array_values($filteredTree);
     }
 
     /**
@@ -424,5 +447,123 @@ class Admin
         if (request()->pjax()) {
             request()->headers->set('X-PJAX', false);
         }
+    }
+
+    /**
+     * Check if a menu item is visible by role OR permission.
+     *
+     * @param array $item
+     * @param mixed $user
+     * @return bool
+     */
+    protected function passesRoleOrPermission(array $item, $user): bool
+    {
+        //超级管理员不限制
+        if ($user && $user->id == 1) {
+            return true;
+        }
+        //安全提取角色 ID（兼容 Eloquent 模型）
+        $menuRoles = $item['roles'] ?? [];
+        $menuRoleIds = collect($menuRoles)->pluck('id')->filter()->toArray();
+        // 用户角色 ID
+        $userRoleIds = $user->roles->pluck('id')->toArray();
+
+        // 角色匹配
+        $passesRole = !empty(array_intersect($userRoleIds, $menuRoleIds));
+
+        // 权限检查
+        $permissions = $item['permission'] ?? [];
+        $passesPermission = false;
+        if (!empty($permissions)) {
+            if (is_string($permissions)) {
+                $permissions = [$permissions];
+            }
+            $passesPermission = collect($permissions)->contains(function ($perm) use ($user) {
+                return $user->can($perm);
+            });
+        }
+
+        // 安全默认：无任何配置则隐藏
+        $hasRoleConfig = !empty($menuRoleIds);
+        $hasPermissionConfig = !empty($permissions);
+
+        if (!$hasRoleConfig && !$hasPermissionConfig) {
+            return false;
+        }
+        $result = $passesRole || $passesPermission;
+        return $result;
+    }
+
+    /**
+     * Build menu tree from flat array (with roles preserved).
+     *
+     * @param array $menus
+     * @param int $parentId
+     * @return array
+     */
+    protected function buildMenuTree(array $menus, int $parentId = 0): array
+    {
+        $branch = [];
+        foreach ($menus as $menu) {
+            if ((int)$menu['parent_id'] === $parentId) {
+                $children = $this->buildMenuTree($menus, (int)$menu['id']);
+                if (!empty($children)) {
+                    $menu['children'] = $children;
+                }
+                $branch[] = $menu;
+            }
+        }
+        //排序
+        usort($branch, function ($a, $b) {
+            $orderA = (int)($a['order'] ?? 0);
+            $orderB = (int)($b['order'] ?? 0);
+            return $orderA <=> $orderB;
+        });
+        return $branch;
+    }
+
+    /**
+     * Recursively filter menu tree by user roles or permissions.
+     *
+     * @param array $items
+     * @param mixed $user
+     * @return array
+     */
+    protected function filterMenuTree(array $items, $user): array
+    {
+        $result = [];
+
+        foreach ($items as $item) {
+            // 递归处理子菜单
+            if (!empty($item['children'])) {
+                $item['children'] = $this->filterMenuTree($item['children'], $user);
+            }
+
+            // 判断当前项是否有直接访问权限
+            $hasDirectAccess = $this->passesRoleOrPermission($item, $user);
+
+            // 情况 1: 是叶子节点（无 children）
+            if (empty($item['children'])) {
+                if ($hasDirectAccess) {
+                    $result[] = $item;
+                }
+                continue;
+            }
+
+            // 情况 2: 有子菜单
+            // 如果父菜单自身可访问 → 保留（即使子菜单为空，也可能是一个可点击页面）
+            // 或者：父菜单不可访问，但有可见子菜单 → 保留作为容器
+            if ($hasDirectAccess || !empty($item['children'])) {
+                $result[] = $item;
+            }
+            // 否则：父菜单不可访问 + 无子菜单 → 跳过（不会发生，因上面已处理 empty(children)）
+        }
+        //排序
+        usort($result, function ($a, $b) {
+            $orderA = (int)($a['order'] ?? 0);
+            $orderB = (int)($b['order'] ?? 0);
+            return $orderA <=> $orderB;
+        });
+        return $result;
     }
 }
